@@ -1,0 +1,32 @@
+{
+  "name": "games-lobby",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack --port 3006",
+    "build": "next build --turbopack",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.tsx\"",
+    "start:prod": "next start --port 3009",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "next": "15.5.0",
+    "three": "^0.179.1",
+    "howler": "^2.2.4",
+    "react-hot-toast": "^2.6.0",
+    "@privy-io/react-auth": "^2.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.0",
+    "@eslint/eslintrc": "^3",
+    "prettier": "^3.4.2"
+  }
+}

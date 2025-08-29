@@ -1,0 +1,258 @@
+
+/* Base game container gets the heavy blur when modal open */
+.game-wrapper {
+    position: relative;
+    transition: filter .35s ease;
+    width: 100%;
+    height: 100%;
+}
+.game-wrapper.blurred {
+    /* Very strong multi-pass style look */
+    filter: blur(42px) saturate(170%) brightness(.55) contrast(105%);
+    will-change: filter;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Fullscreen modal overlay */
+.game-over-modal {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Lower alpha so background blur reads stronger */
+    background: rgba(15,18,28,0.28);
+    /* Extra backdrop blur layer via pseudo-element (some browsers composite both) */
+    overflow: hidden;
+}
+
+/* Massive smear via pseudo element (backdrop-filter applies to content behind overlay) */
+.game-over-modal::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    backdrop-filter: blur(68px) saturate(180%) brightness(.8);
+    -webkit-backdrop-filter: blur(68px) saturate(180%) brightness(.8);
+    /* Subtle texture gradient */
+    background:
+            radial-gradient(circle at 30% 35%, rgba(255,255,255,0.06), transparent 60%),
+            linear-gradient(145deg, rgba(120,90,255,0.08), transparent 55%);
+    pointer-events:none;
+}
+
+/* Panel */
+.game-over-modal__panel {
+    position: relative;
+    padding: 42px 60px;
+    width: min(500px, 90%);
+    color: #fff;
+    text-align: center;
+    font-family: system-ui, sans-serif;
+    backdrop-filter: blur(22px);
+}
+
+.game-over-modal__title {
+    margin: 0 0 14px;
+    font-size: 2.15rem;
+    letter-spacing: .5px;
+
+    /* Fallback solid color */
+    color: #f5f5f5;
+
+    /* Gradient text */
+    background: linear-gradient(180deg, #F5F5F5 29.17%, #9CA3AF 85.42%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent; /* Safari */
+    /* (Optional) Slight font weight tweak for metallic look */
+    font-weight: 700;
+}
+
+.game-over-modal__score {
+    margin: 0 0 30px;
+    font-size: 1.18rem;
+    opacity: .92;
+}
+
+.game-over-modal__btn {
+    appearance: none;
+    cursor: pointer;
+    padding: 15px 34px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: linear-gradient(135deg,#5d7dff,#8d48ff 60%, #ff7de8);
+    color: #fff;
+    box-shadow: 0 6px 26px -6px rgba(93,125,255,0.65);
+    transition: transform .16s, box-shadow .22s, filter .22s;
+}
+
+.game-over-modal__btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 34px -8px rgba(93,125,255,0.75);
+    filter: brightness(1.08);
+}
+
+.game-over-modal__btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 26px -8px rgba(93,125,255,0.6);
+}
+
+/* Optional: reduce blur on very low-end devices */
+@media (max-width: 640px), (prefers-reduced-motion: reduce) {
+    .game-wrapper.blurred { filter: blur(28px) brightness(.6); }
+    .game-over-modal::before { backdrop-filter: blur(48px); -webkit-backdrop-filter: blur(48px); }
+}
+
+.score_block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0px;
+    gap: 10px;
+
+    width: 100%;
+    height: 100%;
+
+    background: linear-gradient(180deg, rgba(245, 245, 245, 0.12) 29.17%, rgba(156, 163, 175, 0.12) 85.42%);
+    box-shadow: 0px 1.56311px 3.12623px rgba(0, 0, 0, 0.08), 0px 0.781557px 0.390779px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(17px);
+    border-radius: 8px;
+
+    flex: none;
+    order: 1;
+    flex-grow: 0;
+}
+
+.score_label {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.score {
+    font-size: 2.15rem;
+    letter-spacing: .5px;
+
+    /* Fallback solid color */
+    color: #f5f5f5;
+
+    /* Gradient text */
+    background: linear-gradient(180deg, #F5F5F5 29.17%, #9CA3AF 85.42%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent; /* Safari */
+    /* (Optional) Slight font weight tweak for metallic look */
+    font-weight: 700;
+}
+
+.share {
+    margin-top: 16px;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 14px;
+    gap: 8px;
+
+    width: 116px;
+    height: 38px;
+
+    background: linear-gradient(180deg, #713EFD 0%, #4400B1 100%), rgba(124, 67, 255, 0.2);
+    backdrop-filter: blur(14px);
+    border-radius: 44px;
+    border-width: 0;
+
+    flex: none;
+    order: 1;
+    flex-grow: 0;
+}
+
+.restart-btn {
+    /* - */
+
+
+    box-sizing: border-box;
+
+    /* Auto layout */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+
+    width: 100%;
+
+    background: #FFFFFF;
+    border-radius: 31px;
+    border-width: 0;
+
+    /* Inside auto layout */
+    flex: none;
+    order: 0;
+    align-self: stretch;
+    flex-grow: 0;
+
+    padding: 16px;
+
+    .text {
+        /* Connect Button Label */
+
+        width: 54px;
+        height: 22px;
+
+        font-family: 'Inter Tight';
+        font-style: normal;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 22px;
+        /* identical to box height, or 138% */
+        text-align: center;
+        letter-spacing: 0.2px;
+
+        /* black */
+        color: #07000F;
+
+
+        /* Inside auto layout */
+        flex: none;
+        order: 0;
+        flex-grow: 0;
+    }
+}
+
+.back-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px 32px;
+    gap: 10px;
+    margin-top: 16px;
+
+    width: 100%;
+
+    background: transparent;           /* transparent background */
+    border: 1px solid rgba(255,255,255,0.55); /* visible border */
+    border-radius: 60px;
+    color: #fff;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 22px;
+
+    /* remove global opacity to avoid dim text */
+    opacity: 1;
+}
+
+.back-btn:hover {
+    border-color: #ffffff;
+}
+
+.back-btn:active {
+    border-color: rgba(255,255,255,0.35);
+}

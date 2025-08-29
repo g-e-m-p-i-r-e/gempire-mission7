@@ -1,0 +1,56 @@
+
+.gameContainer {
+    width: 800px;
+    height: 800px;
+}
+
+.topCenter {
+    width: 100%;
+    min-height: 100vh; /* page height */
+    display: flex;
+    justify-content: center; /* horizontal center */
+    align-items: flex-start; /* stay at top */
+    padding-top: 24px; /* space from very top */
+    box-sizing: border-box;
+}
+
+.frame {
+    position: relative;
+    width: 1000px;
+    aspect-ratio: 1 / 1;
+    background: url('/assets/psppp.png') center / contain no-repeat;
+    --content-left: 20.3%;
+    --content-top: 13%;
+    --content-width: 60%;
+    --content-height: 60%;
+
+}
+
+.frameContent {
+    position: absolute;
+    left: var(--content-left);
+    top: var(--content-top);
+    width: var(--content-width);
+    height: var(--content-height);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+/* Optional: responsive (scale down on small screens) */
+@media (max-width: 900px) {
+    .frame {
+        width: 100%;
+    }
+}
+
+html {
+    background: linear-gradient(0deg, #000000, #000000),
+    linear-gradient(92.52deg, rgba(124, 67, 255, 0.2) 0%, rgba(124, 67, 255, 0.08) 94.97%);
+    height: 100vh;
+
+}

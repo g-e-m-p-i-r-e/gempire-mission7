@@ -1,0 +1,44 @@
+.content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    /* Frame 2147223279 */
+
+    box-sizing: border-box;
+
+    padding: 14.4px;
+    gap: 7.2px;
+
+    position: absolute;
+    width: 356.3px;
+    height: 269.6px;
+
+    background: linear-gradient(105.52deg, rgba(217, 217, 217, 0.2) 7.07%, #411681 96.16%);
+    box-shadow: 0px 3.2px 3.2px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(13.6px);
+    border-radius: 25.6px;
+
+
+    justify-content: space-between;
+}
+
+.logo {
+    /* Group 1261154173 */
+
+    backdrop-filter: blur(9px);
+    /* Note: backdrop-filter has minimal browser support */
+
+    /* Inside auto layout */
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+}
+
+.btn {
+
+}
+
+.btn:hover {
+    opacity: 0.8;
+}
