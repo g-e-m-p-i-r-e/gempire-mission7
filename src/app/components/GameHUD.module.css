@@ -8,8 +8,21 @@
     pointer-events: none;
     z-index: 1000;
     font-family: system-ui, sans-serif;
+    opacity: 0;
+    animation: fadeIn 0.2s ease-in-out forwards;
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@media (max-width: 700px) {
+    .wrapper {
+        transform: translateX(-50%) scale(.8);
+        transform-origin: top center;
+    }
+}
 .bg {
     position: absolute;
     inset: 0;
