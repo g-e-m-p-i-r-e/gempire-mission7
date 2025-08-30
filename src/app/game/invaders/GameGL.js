@@ -268,10 +268,12 @@ const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModal
     const columnSpacingX = 110;   // horizontal distance between columns
     const enemySpacingY = 60;     // vertical distance between enemies in a column
     const topMargin = 120;        // distance from top screen edge
-    const topY = window.innerHeight / 2 - topMargin;
 
     // Treat every group as a vertical column; ignore front/back lateral offsets
     const groups = wave.enemies;
+
+    const enemyHeight = groups[0].config.size?.height || 100;
+    const topY = cameraRef.current.top - enemyHeight / 2; // flush with top
     const numColumns = groups.length;
     const totalWidth = (numColumns - 1) * columnSpacingX;
     const startX = -totalWidth / 2; // centers the formation at x = 0
