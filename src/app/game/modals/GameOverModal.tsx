@@ -1,5 +1,4 @@
 'use client';
-import toast from 'react-hot-toast';
 import './gameOverModal.css';
 import Image from 'next/image';
 export default function GameOverModal({

@@ -6,20 +6,29 @@ import '@/app/game/invaders/invaders.module.css';
 import GameOverModal from '@/app/game/modals/GameOverModal';
 import { TransactionQueue } from '@/app/lib/score-api';
 import toast from 'react-hot-toast';
+import { useAppDispatch } from '@/app/store/hooks';
+import { resetGameData, setIsVisible } from '@/app/store/gameSlice';
 
 export default function InvadersGame({ onMenuAction, userAddress }: { onMenuAction: () => void, userAddress: string }) {
+  const dispatch = useAppDispatch();
+
   const [isGameStarted, setIsGameStarted] = useState(true);
   const [isInGameModalOpen, setIsInGameModalOpen] = useState(false);
   const [gameResultScore, setGameResultScore] = useState(0);
   const [isGameInitialized, setIsGameInitialized] = useState(false);
   const [gameKey, setGameKey] = useState(0);
 
+  const showGameOverModal = () => {
+    setIsInGameModalOpen(true);
+    dispatch(setIsVisible(false));
+  }
+
   const transactionQueueRef = useRef<TransactionQueue>(new TransactionQueue());
 
   const postAddTicket = async () => {};
-  const postRemoveLife = async () => {};
   const postEndGame = async (score: string) => {
     setIsInGameModalOpen(true);
+    dispatch(resetGameData());
     await submitScore(Number(score));
   };
 
@@ -32,6 +41,8 @@ export default function InvadersGame({ onMenuAction, userAddress }: { onMenuActi
     setGameResultScore(0);
     setIsGameStarted(true);
     setGameKey((k) => k + 1);
+    dispatch(resetGameData());
+    dispatch(setIsVisible(true));
   };
   
   const submitScore = async (score: number) => {
@@ -116,7 +127,7 @@ export default function InvadersGame({ onMenuAction, userAddress }: { onMenuActi
           postAddTicket={postAddTicket}
           setGameResultScore={setGameResultScore}
           isGameStarted={isGameStarted}
-          setIsInGameModalOpen={setIsInGameModalOpen}
+          setIsInGameModalOpen={showGameOverModal}
           setIsGameInitialized={setIsGameInitialized}
         />
       </div>

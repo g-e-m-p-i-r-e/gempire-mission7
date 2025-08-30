@@ -3,21 +3,23 @@ import * as THREE from "three";
 import { Howl } from "howler";
 import Ship                                                                      from "./ShipClass";
 import {
-  createFrames,
-  preloadAnimationFramesExact,
   preloadAnimationFramesExactSpaced,
-  preloadAnimationFramesSync
 } from "./helpers/createFrames";
 
 const animationsConfig = {
   columns: 3,
   rows: 1,
-  frameWidthPx: 284,     // реальная ширина одного кадра
-  frameHeightPx: 300,    // реальная высота кадра
-  spacingX: -1,          // горизонтальный зазор между кадрами (ВАШИ 32px)
+  frameWidthPx: 190,
+  frameHeightPx: 200,
+  spacingX: 0,
   spacingY: 0,
-  marginX: 0,            // если есть отступ слева
-  marginY: 0,            // если есть отступ сверху
+  marginX: 0,
+  marginY: 0,
+  manualFrames: [
+    { x: 0, y: 0, width: 190, height: 200 },
+    { x: 191, y: 0, width: 190, height: 200 },
+    { x: 381, y: 0, width: 190, height: 200 },
+  ],
   frames: {
     idle: [0],
     move: [1],
@@ -45,8 +47,7 @@ class UserShip extends Ship {
     this.fireUntil = 0;
     this.isSoundOn = localStorage.getItem("isSoundOn");
 
-    // Правильный расчёт позиции внутри видимой области камеры
-    const camBottom = this.camera.bottom;              // отрицательное число
+    const camBottom = this.camera.bottom;
     const padding = 20;
     const spawnY = camBottom + this.config.size.height / 2 + padding;
     this.mesh.position.set(0, spawnY, 0);
@@ -55,7 +56,6 @@ class UserShip extends Ship {
     this.input = { left: false, right: false };
   }
   move(x) {
-    // Используем границы камеры вместо window.*
     const halfWidth = (this.camera.right - this.camera.left) / 2;
     x = Math.max(-halfWidth + 120, Math.min(halfWidth - 120, x));
     const deltaX = x - this.mesh.position.x;

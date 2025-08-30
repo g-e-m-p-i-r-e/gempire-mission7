@@ -14,6 +14,8 @@ import inGameLiveDeath from "../../../assets/invaders/inGameLiveDeath.svg";
 import { preloadAnimationFrames } from "./helpers/createFrames";
 import { createWaveConfig } from "./helpers/createWaveConfig";
 import { waves } from "./wavesConfig";
+import { useAppDispatch }                              from '@/app/store/hooks';
+import { addScore, loseLife, resetGameData, setLevel } from '@/app/store/gameSlice';
 
 const userShipConfig = {
   speedX: 1,
@@ -21,10 +23,9 @@ const userShipConfig = {
   shootInterval: 500,
   bulletSpeed: 300,
   hp: 3,
-  // Scale the 284x300 frame down (choose any desired display size)
-  size: { width: 100, height: 100 },          // displayed plane size
-  hitbox: { type: "rectangle", width: 100, height: 100 }, // tighter hitbox
-  texture: "/invaders/gameAtlases/user_ship_s.png",       // NEW atlas
+  size: { width: 95, height: 100 },
+  hitbox: { type: "rectangle", width: 150, height: 160 },
+  texture: "/invaders/gameAtlases/user_ship_s3.png",
   bulletTexture: "/invaders/gameAtlases/bulletUserAtlas2.png",
   shineTexture: "/invaders/gameAtlases/shine/userShipShine.png",
   shineSize: { width: 300, height: 300 },
@@ -46,7 +47,7 @@ const getDamage = () => {
 	const sound = new Howl({
 		src: ["/invaders/sounds/gameSounds/getDamage.mp3"],
 		autoplay: false,
-		volume: 0.4,
+		volume: 0.1,
 		loop: false,
 	});
 	//sound.play();
@@ -73,7 +74,7 @@ const enemyDead = () => {
 	const sound = new Howl({
 		src: ["/invaders/sounds/gameSounds/enemyDead.mp3"],
 		autoplay: false,
-		volume: 0.3,
+		volume: 0.1,
 		loop: false,
 	});
 	//sound.play();
@@ -89,7 +90,7 @@ const bossWave = () => {
 };
 
 const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModalOpen, isGameStarted, setIsGameInitialized }) => {
-	//const dispatch = useAppDispatch();
+	const dispatch = useAppDispatch();
 	const mountRef = useRef(null);
 	const userShipRef = useRef(null);
 	const enemyShipsRef = useRef([]);
@@ -368,6 +369,7 @@ const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModal
 		setScore(0);
 		setCountWinTickets(0);
 		setUserHp(userShipConfig.hp);
+    dispatch(resetGameData());
 		currentWaveRef.current = 0;
 		totalUserPlayedWaveRef.current = 0;
 		currentMoveIndexRef.current = 0;
@@ -416,7 +418,7 @@ const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModal
 		"/invaders/gameAtlases/enemyKClass.png",
 		"/invaders/gameAtlases/enemyKClassBullet.png",
 		"/invaders/gameAtlases/shine/enemyKClass.png",
-    "/invaders/gameAtlases/user_ship_s.png",
+    "/invaders/gameAtlases/user_ship_s3.png",
   ];
 
 	const [textures, setTextures] = useState(null);
@@ -529,6 +531,7 @@ const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModal
 							enemyDeadShip.bullets.splice(bulletIndex, 1);
 							userShipRef.current.hp -= 1;
 							setUserHp((prevHp) => prevHp - 1);
+              dispatch(loseLife());
 							if (isSoundOn !== "false") {
 								getDamage();
 							}
@@ -586,15 +589,24 @@ const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModal
 				if (enemyShip.isExplosionAnimationComplete()) {
 					enemyShip.despawn();
 					setScore((prevScore) => {
-						if ((prevScore + enemyShip.config.SWC) % 500 === 0) {
-							postAddTicket();
-							if (isSoundOn !== "false") {
-								get500Points();
-							}
-							setCountWinTickets((prev) => prev + 1);
-						}
-						scoreRefStack.current += enemyShip.config.SWC;
-						return prevScore + enemyShip.config.SWC;
+            const gained = enemyShip.config.SWC;
+            const newScore = prevScore + gained;
+
+            // Award ticket every 500 points (use newScore for the modulus check)
+            if (newScore % 500 === 0) {
+              postAddTicket();
+              if (isSoundOn !== "false") {
+                get500Points();
+              }
+              setCountWinTickets(prev => prev + 1);
+            }
+
+            scoreRefStack.current += gained;
+
+            // Sync Redux score (GameHUD reads from store)
+            dispatch(addScore(gained));
+
+            return newScore;
 					});
 					enemyDeadShipsRef.current.push(...enemyShipsRef.current.splice(i, 1));
 					targetPositionsRef.current.splice(i, 1);
@@ -608,6 +620,7 @@ const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModal
 						enemyShip.bullets.splice(bulletIndex, 1);
 						userShipRef.current.hp -= 1;
 						setUserHp((prevHp) => prevHp - 1);
+            dispatch(loseLife());
 						if (isSoundOn !== "false") {
 							getDamage();
 						}
@@ -631,6 +644,7 @@ const Game = ({ postEndGame, postAddTicket, setGameResultScore, setIsInGameModal
 			if (enemyShipsRef.current.length === 0 && gameStartedRef.current) {
 				currentWaveRef.current++;
 				totalUserPlayedWaveRef.current++;
+        dispatch(setLevel(currentWaveRef.current));
 				if (currentWaveRef.current < waveConfig.length) {
 					cleanUpBullets();
 					if (gameStartedRef.current) {

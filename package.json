@@ -16,7 +16,9 @@
     "three": "^0.179.1",
     "howler": "^2.2.4",
     "react-hot-toast": "^2.6.0",
-    "@privy-io/react-auth": "^2.23.0"
+    "@privy-io/react-auth": "^2.23.0",
+    "react-redux": "^9.2.0",
+    "@reduxjs/toolkit": "^2.8.2"
   },
   "devDependencies": {
     "typescript": "^5",

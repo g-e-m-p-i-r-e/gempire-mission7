@@ -141,7 +141,8 @@ export const buildFrameRects = (config) => {
 // Loader that extracts real pixels (canvas copy) with spacing support
 export const preloadAnimationFramesExactSpaced = (texture, config) => {
   const {
-    frames,              // e.g. { idle:[0], move:[1], fire:[2] }
+    frames,
+    manualFrames,
     columns,
     rows,
     frameWidthPx,
@@ -150,28 +151,38 @@ export const preloadAnimationFramesExactSpaced = (texture, config) => {
     spacingY = 0,
     marginX = 0,
     marginY = 0,
-    MAX_DIM = 2048       // safety cap
+    MAX_DIM = 2048
   } = config;
 
   const atlasWidth = texture.image.width;
   const atlasHeight = texture.image.height;
 
-  const rects = buildFrameRects({ columns, rows, frameWidthPx, frameHeightPx, spacingX, spacingY, marginX, marginY });
+  // Используем manualFrames если они есть, иначе рассчитываем автоматически
+  const rects = manualFrames || buildFrameRects({
+    columns, rows, frameWidthPx, frameHeightPx, spacingX, spacingY, marginX, marginY
+  });
+
   const animationTextures = {};
 
   for (const [key, indices] of Object.entries(frames)) {
     animationTextures[key] = indices.map(index => {
       const r = rects[index];
-      const scale = Math.min(1, MAX_DIM / Math.max(r.widthPx, r.heightPx));
+      // Для manualFrames используем x,y,width,height, для автоматических - xPx,yPx,widthPx,heightPx
+      const x = r.x !== undefined ? r.x : r.xPx;
+      const y = r.y !== undefined ? r.y : r.yPx;
+      const width = r.width !== undefined ? r.width : r.widthPx;
+      const height = r.height !== undefined ? r.height : r.heightPx;
+
+      const scale = Math.min(1, MAX_DIM / Math.max(width, height));
       const canvas = document.createElement('canvas');
-      canvas.width = Math.round(r.widthPx * scale);
-      canvas.height = Math.round(r.heightPx * scale);
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
       const ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = false;
 
       ctx.drawImage(
         texture.image,
-        r.xPx, r.yPx, r.widthPx, r.heightPx,
+        x, y, width, height,
         0, 0, canvas.width, canvas.height
       );
 

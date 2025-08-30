@@ -4,6 +4,8 @@ import { randomStep } from './ai';
 import { parseLevel } from './map';
 import { DIR_VECTORS, type Direction, type GameState, type Ghost, type Pacman, type Pos } from './types';
 import { GamePageProps } from '@/app/game/duck-man/game';
+import { useAppDispatch } from '@/app/store/hooks';
+import { addScore, loseLife, setLevel, addLife } from '@/app/store/gameSlice'; // ensure addLife exists
 
 const TICK_HZ = 60;
 const POWER_DURATION_MS = 8000;
@@ -12,21 +14,17 @@ const MOVE_SPEED = 5;
 const GHOST_SPEED = 5;
 const GHOST_RESPAWN_DELAY_MS = 5000;
 
-function canMove(grid: string[][], pos: Pos) {
-  return grid[pos.y]?.[pos.x] !== '#';
-}
-function nextPos(pos: Pos, dir: Direction): Pos {
-  const v = DIR_VECTORS[dir];
-  return { x: pos.x + v.x, y: pos.y + v.y };
-}
-function samePos(a: Pos, b: Pos) {
-  return a.x === b.x && a.y === b.y;
-}
+type EngineExtraProps = {
+  levelIndex: number;
+  onLevelWin: (score: number, completedLevel: number) => void; // callback to submit score
+};
 
-export function useGameEngine({ postEndGame }: GamePageProps) {
+export function useGameEngine({ postEndGame, levelIndex, onLevelWin }: GamePageProps & EngineExtraProps) {
+  const dispatch = useAppDispatch();
   const endPostedRef = useRef(false);
+
   const initial = useMemo<GameState>(() => {
-    const parsed = parseLevel();
+    const parsed = parseLevel(levelIndex);
     const pac: Pacman = {
       pos: parsed.pacmanSpawn,
       targetPos: parsed.pacmanSpawn,
@@ -48,6 +46,7 @@ export function useGameEngine({ postEndGame }: GamePageProps) {
       moveProgress: 0,
       respawnUntil: 0,
     }));
+    dispatch(setLevel(levelIndex + 1));
     return {
       grid: parsed.grid,
       width: parsed.width,
@@ -60,65 +59,60 @@ export function useGameEngine({ postEndGame }: GamePageProps) {
       lost: false,
       score: 0,
     };
-  }, []);
+  }, [levelIndex, dispatch]);
 
   const stateRef = useRef<GameState>(initial);
   const [snapshot, setSnapshot] = useState<GameState>(initial);
+
+  // Load new level when levelIndex changes (preserve score & lives)
+  useEffect(() => {
+    if (stateRef.current !== initial) {
+      const prev = stateRef.current;
+      const parsed = parseLevel(levelIndex);
+      dispatch(setLevel(levelIndex + 1));
+      stateRef.current = {
+        ...prev,
+        grid: parsed.grid,
+        width: parsed.width,
+        height: parsed.height,
+        coinsLeft: parsed.coinsLeft,
+        pacman: {
+          ...prev.pacman,
+          pos: parsed.pacmanSpawn,
+          targetPos: parsed.pacmanSpawn,
+          dir: 'none',
+          pendingDir: 'none',
+          moveProgress: 0,
+        },
+        ghosts: Array.from({ length: 4 }).map((_, i) => ({
+          id: i,
+          pos: parsed.ghostSpawns[i % parsed.ghostSpawns.length],
+          targetPos: parsed.ghostSpawns[i % parsed.ghostSpawns.length],
+          dir: 'left',
+          speed: GHOST_SPEED,
+          home: parsed.ghostSpawns[i % parsed.ghostSpawns.length],
+          moveProgress: 0,
+          respawnUntil: 0,
+        })),
+        running: true,
+        won: false,
+        lost: false,
+      };
+    }
+  }, [initial, levelIndex, dispatch]);
 
   // Input
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const code = e.code;
       const dirByCode: Record<string, Direction> = {
-        ArrowUp: 'up',
-        ArrowDown: 'down',
-        ArrowLeft: 'left',
-        ArrowRight: 'right',
-        KeyW: 'up',
-        KeyS: 'down',
-        KeyA: 'left',
-        KeyD: 'right',
+        ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+        KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right',
       };
       const dir = dirByCode[code];
       if (dir) {
         e.preventDefault();
         stateRef.current.pacman.pendingDir = dir;
-        return;
-      }
-      if (code === 'KeyR') {
-        const parsed = parseLevel();
-        stateRef.current = {
-          grid: parsed.grid,
-          width: parsed.width,
-          height: parsed.height,
-          coinsLeft: parsed.coinsLeft,
-          pacman: {
-            pos: parsed.pacmanSpawn,
-            targetPos: parsed.pacmanSpawn,
-            dir: 'none',
-            pendingDir: 'none',
-            speed: MOVE_SPEED,
-            lives: MAX_LIVES,
-            poweredUntil: 0,
-            moveProgress: 0,
-            facing: 'right',
-          },
-          ghosts: Array.from({ length: 4 }).map((_, i) => ({
-            id: i,
-            pos: parsed.ghostSpawns[i % parsed.ghostSpawns.length],
-            targetPos: parsed.ghostSpawns[i % parsed.ghostSpawns.length],
-            dir: 'left',
-            speed: GHOST_SPEED,
-            home: parsed.ghostSpawns[i % parsed.ghostSpawns.length],
-            moveProgress: 0,
-            respawnUntil: 0,
-          })),
-          running: true,
-          won: false,
-          lost: false,
-          score: 0,
-        };
-        endPostedRef.current = false;
         return;
       }
     };
@@ -137,13 +131,16 @@ export function useGameEngine({ postEndGame }: GamePageProps) {
       acc += now - last;
       last = now;
       while (acc >= stepMs) {
-        tick(stateRef.current, now);
+        tick(stateRef.current, now, {
+          onScore: (delta) => delta > 0 && dispatch(addScore(delta)),
+          onLoseLife: () => dispatch(loseLife()),
+          onGainLife: () => dispatch(addLife(1)),
+          onLevelCleared: (scoreAtClear, completedLevel) => onLevelWin(scoreAtClear, completedLevel),
+        });
         acc -= stepMs;
       }
       const s = stateRef.current;
-      setSnapshot({ ...s, grid: s.grid.map((r) => [...r]) });
-
-      console.log(s.running);
+      setSnapshot({ ...s, grid: s.grid.map(r => [...r]) });
       if ((s.lost || s.won) && !endPostedRef.current) {
         endPostedRef.current = true;
         postEndGame(s.score, s.won);
@@ -151,16 +148,25 @@ export function useGameEngine({ postEndGame }: GamePageProps) {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [postEndGame]);
+  }, [dispatch, onLevelWin, postEndGame]);
 
   return snapshot;
 }
 
-function tick(s: GameState, now: number) {
+function tick(
+  s: GameState,
+  now: number,
+  cb: {
+    onScore: (delta: number) => void;
+    onLoseLife: () => void;
+    onGainLife: () => void;
+    onLevelCleared: (scoreAtClear: number, completedLevel: number) => void;
+  }
+) {
   if (!s.running) return;
   const dt = 1 / TICK_HZ;
 
-  // Pacman movement
+  // Pacman movement completion
   if (s.pacman.moveProgress >= 1) {
     s.pacman.pos = { ...s.pacman.targetPos };
     s.pacman.moveProgress = 0;
@@ -176,23 +182,29 @@ function tick(s: GameState, now: number) {
 
     // Collect tile
     const tile = s.grid[s.pacman.pos.y][s.pacman.pos.x];
+    let gained = 0;
     if (tile === '.') {
       s.grid[s.pacman.pos.y][s.pacman.pos.x] = ' ';
       s.coinsLeft--;
-      s.score += 10;
+      gained += 10;
     } else if (tile === 'B') {
       s.grid[s.pacman.pos.y][s.pacman.pos.x] = ' ';
       s.pacman.poweredUntil = now + POWER_DURATION_MS;
-      s.score += 50;
+      gained += 50;
     } else if (tile === 'H') {
       s.grid[s.pacman.pos.y][s.pacman.pos.x] = ' ';
       s.pacman.lives = Math.min(MAX_LIVES, s.pacman.lives + 1);
-      s.score += 25;
+      cb.onGainLife();
+      gained += 25;
+    }
+    if (gained) {
+      s.score += gained;
+      cb.onScore(gained);
     }
 
     if (s.coinsLeft <= 0) {
-      s.running = false;
-      s.won = true;
+      // Level clear: do not end game; notify & wait for parent to change levelIndex
+      cb.onLevelCleared(s.score, 1); // pass completedLevel if tracking
       return;
     }
   } else {
@@ -215,7 +227,7 @@ function tick(s: GameState, now: number) {
       g.moveProgress = Math.min(1, g.moveProgress + g.speed * dt);
     }
 
-    // Collision check (continuous)
+    // Collision check
     const gReal = {
       x: g.pos.x + (g.targetPos.x - g.pos.x) * g.moveProgress,
       y: g.pos.y + (g.targetPos.y - g.pos.y) * g.moveProgress,
@@ -226,19 +238,19 @@ function tick(s: GameState, now: number) {
     };
     if (Math.abs(gReal.x - pReal.x) < 0.5 && Math.abs(gReal.y - pReal.y) < 0.5) {
       if (frightened) {
-        // Eat ghost
         g.pos = { ...g.home };
         g.targetPos = { ...g.home };
         g.moveProgress = 0;
         g.dir = 'left';
         g.respawnUntil = now + GHOST_RESPAWN_DELAY_MS;
         s.score += 200;
+        cb.onScore(200);
       } else {
-        // Pacman hit
         s.pacman.lives -= 1;
+        cb.onLoseLife();
         if (s.pacman.lives <= 0) {
           s.running = false;
-          s.lost = true; // triggers callback in loop
+          s.lost = true;
         } else {
           respawn(s);
         }
@@ -250,8 +262,15 @@ function tick(s: GameState, now: number) {
   if (s.pacman.dir === 'left' || s.pacman.dir === 'right') s.pacman.facing = s.pacman.dir;
 }
 
+function canMove(grid: string[][], pos: Pos) { return grid[pos.y]?.[pos.x] !== '#'; }
+function nextPos(pos: Pos, dir: Direction): Pos {
+  const v = DIR_VECTORS[dir];
+  return { x: pos.x + v.x, y: pos.y + v.y };
+}
+function samePos(a: Pos, b: Pos) { return a.x === b.x && a.y === b.y; }
+
 function respawn(s: GameState) {
-  const { pacmanSpawn, ghostSpawns } = parseLevel();
+  const { pacmanSpawn, ghostSpawns } = parseLevel(); // current layout not needed for respawn specifics
   s.pacman.pos = { ...pacmanSpawn };
   s.pacman.targetPos = { ...pacmanSpawn };
   s.pacman.moveProgress = 0;

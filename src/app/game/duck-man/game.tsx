@@ -1,3 +1,4 @@
+// File: src/app/game/duck-man/game.tsx
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -31,40 +32,29 @@ if (typeof window !== 'undefined') {
 
 function loadImages() {
   if (!spritesLoaded) {
-    duckSprite1 = new Image();
-    duckSprite1.src = '/duck-man/player/bird1.svg';
-    duckSprite2 = new Image();
-    duckSprite2.src = '/duck-man/player/bird2.svg';
-    duckSprite3 = new Image();
-    duckSprite3.src = '/duck-man/player/bird3.svg';
+    duckSprite1 = new Image(); duckSprite1.src = '/duck-man/player/bird1.svg';
+    duckSprite2 = new Image(); duckSprite2.src = '/duck-man/player/bird2.svg';
+    duckSprite3 = new Image(); duckSprite3.src = '/duck-man/player/bird3.svg';
     Promise.all([
-      new Promise((r) => (duckSprite1!.onload = r)),
-      new Promise((r) => (duckSprite2!.onload = r)),
-      new Promise((r) => (duckSprite3!.onload = r)),
-    ]).then(() => {
-      spritesLoaded = true;
-    });
+      new Promise(r => (duckSprite1!.onload = r)),
+      new Promise(r => (duckSprite2!.onload = r)),
+      new Promise(r => (duckSprite3!.onload = r)),
+    ]).then(() => { spritesLoaded = true; });
   }
   if (!backgroundLoaded) {
     backgroundImage = new Image();
     backgroundImage.src = '/duck-man/background.png';
-    backgroundImage.onload = () => {
-      backgroundLoaded = true;
-    };
+    backgroundImage.onload = () => { backgroundLoaded = true; };
   }
   if (!boostLoaded) {
     boostImage = new Image();
     boostImage.src = '/duck-man/boost/killer.svg';
-    boostImage.onload = () => {
-      boostLoaded = true;
-    };
+    boostImage.onload = () => { boostLoaded = true; };
   }
   if (!healLoaded) {
     healImage = new Image();
     healImage.src = '/duck-man/boost/heal.svg';
-    healImage.onload = () => {
-      healLoaded = true;
-    };
+    healImage.onload = () => { healLoaded = true; };
   }
   if (ghostSprites.length === 0) {
     ghostSprites = Array.from({ length: GHOST_COUNT }, () => Array<HTMLImageElement>(GHOST_FRAME_COUNT));
@@ -75,26 +65,27 @@ function loadImages() {
         const img = new Image();
         img.src = `/duck-man/ghosts/${gi + 1}-${fi + 1}.svg`;
         ghostSprites[gi][fi] = img;
-        promises.push(
-          new Promise((res) => {
-            img.onload = () => res();
-            img.onerror = () => res();
-          }),
-        );
+        promises.push(new Promise(res => {
+          img.onload = () => res();
+          img.onerror = () => res();
+        }));
       }
     }
     Promise.all(promises).then(() => {
-      ghostSpritesLoaded = ghostSprites.map((fr) => fr.every((im) => im.complete));
-      allGhostSpritesLoaded = ghostSpritesLoaded.every((v) => v);
+      ghostSpritesLoaded = ghostSprites.map(fr => fr.every(im => im.complete));
+      allGhostSpritesLoaded = ghostSpritesLoaded.every(v => v);
     });
   }
 }
+
 export interface GamePageProps {
   postEndGame: (score: number, isWin: boolean) => void;
+  levelIndex: number;
+  onLevelWin: (score: number, completedLevel: number) => void;
 }
 
-export default function GamePage({ postEndGame }: GamePageProps) {
-  const state = useGameEngine({ postEndGame });
+export default function GamePage({ postEndGame, levelIndex, onLevelWin }: GamePageProps) {
+  const state = useGameEngine({ postEndGame, levelIndex, onLevelWin });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
@@ -102,7 +93,7 @@ export default function GamePage({ postEndGame }: GamePageProps) {
   useEffect(() => {
     if (!containerRef.current) return;
     const el = containerRef.current;
-    const ro = new ResizeObserver((entries) => {
+    const ro = new ResizeObserver(entries => {
       const cr = entries[0].contentRect;
       setContainerSize({ w: Math.floor(cr.width), h: Math.floor(cr.height) });
     });
@@ -145,7 +136,7 @@ export default function GamePage({ postEndGame }: GamePageProps) {
       state.pacman.dir,
       state.pacman.facing,
       tileW,
-      tileH,
+      tileH
     );
 
     const now = performance.now();
@@ -178,6 +169,7 @@ export default function GamePage({ postEndGame }: GamePageProps) {
     </div>
   );
 }
+
 function draw(ctx: CanvasRenderingContext2D, grid: Tile[][], w: number, h: number, tileW: number, tileH: number) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   if (backgroundLoaded && backgroundImage) {
