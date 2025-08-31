@@ -11,7 +11,7 @@ import { useAppDispatch } from '@/app/store/hooks';
 
 export default function GameMain() {
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
-  const [address, setAddress] = useState<string>('test');
+  const [address, setAddress] = useState<string>('');
 
   const dispatch = useAppDispatch();
 
